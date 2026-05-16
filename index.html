@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Enkel timeplanlegger</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Enkel timeplanlegger</h1>
+      <p>Dra fag, lærere og voksne inn i kalenderen for å bygge timeplanen raskere.</p>
+    </div>
+    <div class="topbar-actions">
+      <button id="exportBtn" class="secondary">Eksporter JSON</button>
+      <label class="secondary file-label">
+        Importer JSON
+        <input id="importInput" type="file" accept="application/json" />
+      </label>
+      <button id="resetBtn" class="danger">Nullstill</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel tools-panel">
+      <h2>1. Grunndata</h2>
+
+      <section class="form-block">
+        <h3>Klasser</h3>
+        <p class="hint">Velg klasse før du drar fag inn i kalenderen.</p>
+        <div class="row">
+          <input id="classInput" placeholder="F.eks. 8A" />
+          <button id="addClassBtn">Legg til</button>
+        </div>
+        <ul id="classesList" class="chip-list"></ul>
+      </section>
+
+      <section class="form-block">
+        <h3>Rom</h3>
+        <p class="hint">Velg standardrom. Rom kan endres etterpå.</p>
+        <div class="row">
+          <input id="roomInput" placeholder="F.eks. 204" />
+          <button id="addRoomBtn">Legg til</button>
+        </div>
+        <ul id="roomsList" class="chip-list"></ul>
+      </section>
+
+      <section class="form-block">
+        <h3>Fag</h3>
+        <div class="row">
+          <input id="subjectInput" placeholder="F.eks. Matematikk" />
+          <button id="addSubjectBtn">Legg til</button>
+        </div>
+        <div id="subjectsPalette" class="palette"></div>
+      </section>
+
+      <section class="form-block">
+        <h3>Lærere</h3>
+        <div class="row">
+          <input id="teacherInput" placeholder="F.eks. Kristian" />
+          <button id="addTeacherBtn">Legg til</button>
+        </div>
+        <div id="teachersPalette" class="palette"></div>
+      </section>
+
+      <section class="form-block">
+        <h3>Fagarbeidere / voksne</h3>
+        <div class="row">
+          <input id="assistantInput" placeholder="F.eks. Mari" />
+          <button id="addAssistantBtn">Legg til</button>
+        </div>
+        <div id="assistantsPalette" class="palette"></div>
+      </section>
+    </aside>
+
+    <section class="panel main-panel">
+      <section class="builder-bar">
+        <div>
+          <h2>2. Dra inn i kalenderen</h2>
+          <p>
+            Velg klasse og rom. Dra et fag til en rute for å lage time.
+            Dra lærere og fagarbeidere inn på samme time etterpå.
+          </p>
+        </div>
+        <div class="builder-controls">
+          <label>
+            Klasse
+            <select id="activeClassSelect"></select>
+          </label>
+          <label>
+            Rom
+            <select id="activeRoomSelect"></select>
+          </label>
+        </div>
+      </section>
+
+      <div id="warnings" class="warnings" aria-live="polite"></div>
+
+      <section class="free-teachers-box">
+        <div class="section-header compact">
+          <div>
+            <h2>Ledige voksne</h2>
+            <p>Velg dag og time for å se hvem som ikke er satt opp.</p>
+          </div>
+          <div class="filters">
+            <select id="freeDaySelect"></select>
+            <select id="freePeriodSelect"></select>
+          </div>
+        </div>
+        <div id="freeAdultsResult" class="free-teachers-result"></div>
+      </section>
+
+      <div class="section-header">
+        <div>
+          <h2>3. Timeplan</h2>
+          <p>Klikk på en time for å redigere rom, klasse, fag og voksne.</p>
+        </div>
+        <div class="filters">
+          <select id="viewType">
+            <option value="className">Klasse</option>
+            <option value="teacher">Lærer</option>
+            <option value="assistant">Fagarbeider/voksen</option>
+            <option value="room">Rom</option>
+          </select>
+          <select id="viewValue"></select>
+        </div>
+      </div>
+
+      <div id="scheduleGrid" class="schedule-grid"></div>
+    </section>
+  </main>
+
+  <dialog id="editDialog">
+    <form id="editForm" method="dialog" class="edit-form">
+      <h2>Rediger time</h2>
+
+      <label>
+        Dag
+        <select id="editDaySelect"></select>
+      </label>
+
+      <label>
+        Time
+        <select id="editPeriodSelect"></select>
+      </label>
+
+      <label>
+        Klasse
+        <select id="editClassSelect"></select>
+      </label>
+
+      <label>
+        Fag
+        <select id="editSubjectSelect"></select>
+      </label>
+
+      <label>
+        Lærere
+        <select id="editTeachersSelect" multiple size="5"></select>
+      </label>
+
+      <label>
+        Fagarbeidere / voksne
+        <select id="editAssistantsSelect" multiple size="5"></select>
+      </label>
+
+      <label>
+        Rom
+        <select id="editRoomSelect"></select>
+      </label>
+
+      <div class="dialog-actions">
+        <button id="saveEditBtn" type="submit">Lagre</button>
+        <button id="deleteEditBtn" type="button" class="danger">Slett time</button>
+        <button id="cancelEditBtn" type="button" class="secondary">Avbryt</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    <p>Lagring skjer lokalt i nettleseren. Ikke bruk dette til sensitive elevopplysninger uten videre personvernvurdering.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
