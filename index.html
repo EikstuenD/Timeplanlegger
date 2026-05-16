@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Enkel timeplanlegger – vikarversjon</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Enkel timeplanlegger</h1>
+      <p>Dra fag, lærere og voksne inn i kalenderen. Marker fravær og finn vikarer raskt.</p>
+    </div>
+    <div class="topbar-actions">
+      <button id="exportBtn" class="secondary">Eksporter JSON</button>
+      <label class="secondary file-label">
+        Importer JSON
+        <input id="importInput" type="file" accept="application/json" />
+      </label>
+      <label class="secondary file-label">
+        Importer CSV
+        <input id="csvInput" type="file" accept=".csv,text/csv" />
+      </label>
+      <button id="printBtn" class="secondary">Skriv ut vikarliste</button>
+      <button id="resetBtn" class="danger">Nullstill</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel tools-panel">
+      <h2>1. Grunndata</h2>
+
+      <section class="form-block">
+        <h3>Klasser</h3>
+        <p class="hint">Velg klasse før du drar fag inn i kalenderen.</p>
+        <div class="row">
+          <input id="classInput" placeholder="F.eks. 8A" />
+          <button id="addClassBtn">Legg til</button>
+        </div>
+        <ul id="classesList" class="chip-list"></ul>
+      </section>
+
+      <section class="form-block">
+        <h3>Rom</h3>
+        <p class="hint">Velg standardrom. Rom kan endres etterpå.</p>
+        <div class="row">
+          <input id="roomInput" placeholder="F.eks. 204" />
+          <button id="addRoomBtn">Legg til</button>
+        </div>
+        <ul id="roomsList" class="chip-list"></ul>
+      </section>
+
+      <section class="form-block">
+        <h3>Fag</h3>
+        <p class="hint">Hvert fag får automatisk sin egen farge.</p>
+        <div class="row">
+          <input id="subjectInput" placeholder="F.eks. Matematikk" />
+          <button id="addSubjectBtn">Legg til</button>
+        </div>
+        <div id="subjectsPalette" class="palette"></div>
+      </section>
+
+      <section class="form-block">
+        <h3>Lærere</h3>
+        <div class="row">
+          <input id="teacherInput" placeholder="F.eks. Kristian" />
+          <button id="addTeacherBtn">Legg til</button>
+        </div>
+        <div id="teachersPalette" class="palette"></div>
+      </section>
+
+      <section class="form-block">
+        <h3>Fagarbeidere / voksne</h3>
+        <div class="row">
+          <input id="assistantInput" placeholder="F.eks. Mari" />
+          <button id="addAssistantBtn">Legg til</button>
+        </div>
+        <div id="assistantsPalette" class="palette"></div>
+      </section>
+
+      <section class="form-block">
+        <h3>CSV-import</h3>
+        <p class="hint">
+          Kolonner: dag,time,klasse,fag,rom,lærere,fagarbeidere,notat.
+          Flere navn skilles med semikolon.
+        </p>
+      </section>
+    </aside>
+
+    <section class="panel main-panel">
+      <nav class="tabs">
+        <button class="tab active" data-tab="plannerTab">Timeplan</button>
+        <button class="tab" data-tab="timeSetupTab">Tidsoppsett</button>
+        <button class="tab" data-tab="absenceTab">Fravær og vikar</button>
+        <button class="tab" data-tab="overviewTab">Oversikter</button>
+        <button class="tab" data-tab="controlTab">Kontroll</button>
+      </nav>
+
+      <section id="plannerTab" class="tab-panel active">
+        <section class="builder-bar">
+          <div>
+            <h2>2. Dra inn i kalenderen</h2>
+            <p>
+              Velg klasse og rom. Dra et fag til en rute for å lage time.
+              Dra lærere og fagarbeidere inn på samme time etterpå.
+            </p>
+          </div>
+          <div class="builder-controls">
+            <label>
+              Klasse
+              <select id="activeClassSelect"></select>
+            </label>
+            <label>
+              Rom
+              <select id="activeRoomSelect"></select>
+            </label>
+          </div>
+        </section>
+
+        <div id="warnings" class="warnings" aria-live="polite"></div>
+
+        <section class="room-overview-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Romoversikt</h2>
+              <p>Velg et rom for å se alle timer som er satt der.</p>
+            </div>
+            <div class="filters">
+              <select id="roomOverviewSelect"></select>
+            </div>
+          </div>
+          <div id="roomOverviewGrid" class="schedule-grid room-grid"></div>
+        </section>
+
+        <div class="section-header">
+          <div>
+            <h2>3. Timeplan</h2>
+            <p>Klikk på en time for å redigere rom, klasse, fag, voksne, vikar og notat.</p>
+          </div>
+          <div class="filters">
+            <select id="viewType">
+              <option value="className">Klasse</option>
+              <option value="teacher">Lærer</option>
+              <option value="assistant">Fagarbeider/voksen</option>
+              <option value="room">Rom</option>
+            </select>
+            <select id="viewValue"></select>
+          </div>
+        </div>
+
+        <div id="scheduleGrid" class="schedule-grid"></div>
+      </section>
+
+
+      <section id="timeSetupTab" class="tab-panel">
+        <section class="info-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Tidsoppsett for skoledagen</h2>
+              <p>Legg inn navn på økter, start, slutt og pause etter økta. Disse tidene brukes i kalenderen og i fravær/vikaroversiktene.</p>
+            </div>
+            <button id="addPeriodBtn" type="button">Legg til økt</button>
+          </div>
+
+          <div id="periodEditor" class="period-editor"></div>
+        </section>
+
+        <section class="info-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Kopier dag</h2>
+              <p>Kopier alle timer fra én dag til én eller flere andre dager. Ny kopi får samme fag, klasse, rom, lærere, voksne, vikarer og notat.</p>
+            </div>
+          </div>
+
+          <div class="copy-day-form">
+            <label>
+              Kopier fra
+              <select id="copyFromDaySelect"></select>
+            </label>
+
+            <label>
+              Kopier til
+              <select id="copyToDaysSelect" multiple size="5"></select>
+            </label>
+
+            <label>
+              Håndtering av eksisterende timer
+              <select id="copyModeSelect">
+                <option value="skip">Ikke kopier til dager som allerede har timer</option>
+                <option value="append">Legg til i tillegg til eksisterende timer</option>
+                <option value="replace">Slett eksisterende timer på mål-dagen først</option>
+              </select>
+            </label>
+
+            <button id="copyDayBtn" type="button">Kopier dag</button>
+          </div>
+
+          <p class="hint">Tips: Lag først mandag slik du vil ha den, og kopier den deretter til tirsdag–fredag.</p>
+        </section>
+
+        <section class="info-box">
+          <h2>Andre nyttige tillegg senere</h2>
+          <ul class="nice-list">
+            <li><strong>Dagsmaler:</strong> lagre ulike dagsoppsett, for eksempel vanlig dag, kortdag og tentamensdag.</li>
+            <li><strong>Ukesmaler:</strong> A-uke/B-uke eller oddetalls-/partallsuke.</li>
+            <li><strong>Drag-and-drop av hele timer:</strong> flytt en time fra én rute til en annen.</li>
+            <li><strong>Eksport til Excel:</strong> nyttig for videre deling med ledelse eller administrasjon.</li>
+            <li><strong>Historikk for vikartimer:</strong> se hvem som har hatt mange vikartimer over tid.</li>
+          </ul>
+        </section>
+      </section>
+
+      <section id="absenceTab" class="tab-panel">
+        <section class="absence-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Fravær i dag</h2>
+              <p>Marker hvem som er borte. Systemet finner timer som trenger vikar.</p>
+            </div>
+          </div>
+
+          <div class="absence-form">
+            <label>
+              Dato
+              <input id="absenceDateInput" type="date" />
+            </label>
+            <label>
+              Dag
+              <select id="absenceDaySelect"></select>
+            </label>
+            <label>
+              Person
+              <select id="absencePersonSelect"></select>
+            </label>
+            <label>
+              Type
+              <select id="absenceRoleSelect">
+                <option value="teacher">Lærer</option>
+                <option value="assistant">Fagarbeider/voksen</option>
+              </select>
+            </label>
+            <label>
+              Timer
+              <select id="absencePeriodsSelect" multiple size="5"></select>
+            </label>
+            <button id="addAbsenceBtn" type="button">Legg til fravær</button>
+          </div>
+
+          <div id="absenceList" class="absence-list"></div>
+        </section>
+
+        <section class="substitute-box print-area">
+          <div class="section-header compact">
+            <div>
+              <h2>Vikarbehov</h2>
+              <p>Timer der en registrert lærer eller voksen er borte.</p>
+            </div>
+            <div class="filters no-print">
+              <select id="substituteDaySelect"></select>
+            </div>
+          </div>
+          <div id="substituteNeeds"></div>
+        </section>
+      </section>
+
+      <section id="overviewTab" class="tab-panel">
+        <section class="free-teachers-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Ledige voksne</h2>
+              <p>Velg dag og time for å se hvem som ikke er satt opp.</p>
+            </div>
+            <div class="filters">
+              <select id="freeDaySelect"></select>
+              <select id="freePeriodSelect"></select>
+            </div>
+          </div>
+          <div id="freeAdultsResult" class="free-teachers-result"></div>
+        </section>
+
+        <section class="info-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Belastning per lærer</h2>
+              <p>Viser undervisningstimer, vikartimer og ledige timer for valgt dag.</p>
+            </div>
+            <div class="filters">
+              <select id="workloadDaySelect"></select>
+            </div>
+          </div>
+          <div id="workloadTable"></div>
+        </section>
+
+        <section class="info-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Hulltimer</h2>
+              <p>Velg dag og time for å se hvem som er ledig akkurat da, og hva de har før/etter.</p>
+            </div>
+            <div class="filters">
+              <select id="holesDaySelect"></select>
+              <select id="holesPeriodSelect"></select>
+            </div>
+          </div>
+          <div id="holesResult"></div>
+        </section>
+      </section>
+
+      <section id="controlTab" class="tab-panel">
+        <section class="control-box">
+          <div class="section-header compact">
+            <div>
+              <h2>Sjekk kollisjoner og mangler</h2>
+              <p>Finn dobbeltbookinger, timer uten lærer, timer uten rom og andre feil.</p>
+            </div>
+            <button id="runControlBtn" type="button">Kjør kontroll</button>
+          </div>
+          <div id="controlResults"></div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="editDialog">
+    <form id="editForm" method="dialog" class="edit-form">
+      <h2>Rediger time</h2>
+
+      <label>
+        Dag
+        <select id="editDaySelect"></select>
+      </label>
+
+      <label>
+        Time
+        <select id="editPeriodSelect"></select>
+      </label>
+
+      <label>
+        Klasse
+        <select id="editClassSelect"></select>
+      </label>
+
+      <label>
+        Fag
+        <select id="editSubjectSelect"></select>
+      </label>
+
+      <label>
+        Fast lærer(e)
+        <select id="editTeachersSelect" multiple size="5"></select>
+      </label>
+
+      <label>
+        Fagarbeidere / voksne
+        <select id="editAssistantsSelect" multiple size="5"></select>
+      </label>
+
+      <label>
+        Vikar(er)
+        <select id="editSubstitutesSelect" multiple size="5"></select>
+      </label>
+
+      <label>
+        Rom
+        <select id="editRoomSelect"></select>
+      </label>
+
+      <label class="wide">
+        Kommentar/notat til timen
+        <textarea id="editNoteInput" rows="4" placeholder="F.eks. Elevene jobber med oppgaveark i Classroom."></textarea>
+      </label>
+
+      <div id="editSuggestions" class="wide suggestions-box"></div>
+
+      <div class="dialog-actions">
+        <button id="findSubBtn" type="button" class="secondary">Finn vikar</button>
+        <button id="saveEditBtn" type="submit">Lagre</button>
+        <button id="deleteEditBtn" type="button" class="danger">Slett time</button>
+        <button id="cancelEditBtn" type="button" class="secondary">Avbryt</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer>
+    <p>Lagring skjer lokalt i nettleseren. Ikke bruk dette til sensitive elevopplysninger uten videre personvernvurdering.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
